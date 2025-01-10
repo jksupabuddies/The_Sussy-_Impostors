@@ -238,7 +238,7 @@ public class RobotPlayer {
             targetloc = mapInfos[rng.nextInt(mapInfos.length)].getMapLocation();
             targetSet = true;
         }
-        rc.setIndicatorDot(targetloc, 255, 100, 132);
+        rc.setIndicatorLine(startLoc, targetloc, 255, 100, 155);
         BugNavPathFind bF = new BugNavPathFind(targetloc, startLoc);
         if(bF.move(rc) == null){
             targetSet = false;
