@@ -14,14 +14,14 @@ public class BugNavPathFind {
         this.nextStep = null;
     }
 
-    public MapLocation move(RobotController rc) throws GameActionException{
+    public Direction move(RobotController rc) throws GameActionException{
+        Direction ret = null;
         Direction tD = startLoc.directionTo(targetLoc);
         // ArrayList<Integer> debugList = new ArrayList<Integer>();
         //rc.setIndicatorString("" + tD);
         MapInfo nS = rc.senseMapInfo(startLoc.add(tD));
         MapInfo tgInfo = rc.senseMapInfo(targetLoc);
         MapInfo[] adjTileInfo = null;
-        nextStep = nS.getMapLocation();
         if(rc.getLocation().equals(targetLoc)){
             return null;
         } 
@@ -30,7 +30,8 @@ public class BugNavPathFind {
             return null;
         }
         if(rc.canMove(tD)){
-             rc.move(tD);
+            ret = tD;
+             //rc.move(tD);
              rc.setIndicatorDot(rc.getLocation().add(tD), 150, 120, 100);
         }
         else if(!nS.isPassable()){
@@ -64,11 +65,12 @@ public class BugNavPathFind {
             //    // }
             // }
             if(rc.canMove(wallDir)){
-                rc.move(wallDir);
+                ret = wallDir;
+                // rc.move(wallDir);
                 rc.setIndicatorDot(rc.getLocation().add(tD), 150, 120, 100);
             }
         }
-        return nextStep;
+        return ret;
         
     }
 
