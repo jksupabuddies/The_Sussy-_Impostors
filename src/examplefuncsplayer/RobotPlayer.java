@@ -29,6 +29,8 @@ public class RobotPlayer {
      * these variables are static, in Battlecode they aren't actually shared between your robots.
      */
     static int turnCount = 0;
+    static int transition = 0;
+    static MapLocation[] targetList = {new MapLocation(3, 19), new MapLocation(0,19)};
 
 
 
@@ -52,6 +54,7 @@ public class RobotPlayer {
         Direction.NORTHWEST,
     };
 
+    static boolean debug = true;
     static boolean targetSet = false;
     static MapLocation targetloc, startLoc;
     static HashMap<MapInfo,MapLocation> towerList = new HashMap<MapInfo,MapLocation>();
@@ -161,6 +164,7 @@ public class RobotPlayer {
         // Sense information about all visible nearby tiles.
         MapInfo[] nearbyTiles = rc.senseNearbyMapInfos();
         // Search for a nearby ruin to complete.
+
         MapInfo curRuin = null;
         for (MapInfo tile : nearbyTiles){
             if (tile.hasRuin()){
@@ -234,6 +238,13 @@ public class RobotPlayer {
     public static void runSplasher(RobotController rc) throws GameActionException{
         MapInfo[] mapInfos = rc.senseNearbyMapInfos();
         startLoc = rc.getLocation();
+        if(rc.canSenseLocation(targetList[transition]) && !targetSet && debug){
+            targetloc = targetList[transition];
+            if(transition < 1){
+                transition++;
+            }
+            targetSet = true;
+        }
         if(!targetSet){
             targetloc = mapInfos[rng.nextInt(mapInfos.length)].getMapLocation();
             targetSet = true;
@@ -417,15 +428,15 @@ public class RobotPlayer {
         // }
         
     }
-    public static double concGradCalc(MapInfo[] tiles){
-        double conc = 0;
-        for(int i = 0; i < 3; i++){
-            if(tiles[i].getPaint().isAlly()){
-                conc++;
-            }
-        }
-        return conc/3;
-    }
+    // public static double concGradCalc(MapInfo[] tiles){
+    //     double conc = 0;
+    //     for(int i = 0; i < 3; i++){
+    //         if(tiles[i].getPaint().isAlly()){
+    //             conc++;
+    //         }
+    //     }
+    //     return conc/3;
+    // }
 
     public static void updateEnemyRobots(RobotController rc) throws GameActionException{
         // Sensing methods can be passed in a radius of -1 to automatically 
