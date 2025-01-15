@@ -1,19 +1,9 @@
 package examplefuncsplayer;
 
 import battlecode.common.*;
-import battlecode.schema.GameplayConstants;
-import scala.reflect.macros.internal.macroImpl;
 
-import java.rmi.dgc.DGC;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
 import java.util.Random;
-import java.util.Set;
 
-import javax.persistence.EnumType;
 
 
 
@@ -30,7 +20,10 @@ public class RobotPlayer {
      */
     static int turnCount = 0;
     static int transition = 0;
+    static Soldier sDl = new Soldier();
     static MapLocation[] targetList = {new MapLocation(19, 16), new MapLocation(19,19)};
+    static MapLocation[] pTwLocs = new MapLocation[25];
+    int pTwAmount = 0;
 
 
 
@@ -54,11 +47,11 @@ public class RobotPlayer {
         Direction.NORTHWEST,
     };
 
-    static boolean debug = true;
+    static boolean debug = false;
+
+
     static boolean targetSet = false;
     static MapLocation targetloc, startLoc;
-    static HashMap<MapInfo,MapLocation> towerList = new HashMap<MapInfo,MapLocation>();
-
     /**
      * run() is the method that is called when a robot is instantiated in the Battlecode world.
      * It is like the main function for your robot. If this method returns, the robot dies!
@@ -70,10 +63,10 @@ public class RobotPlayer {
     public static void run(RobotController rc) throws GameActionException {
         // Hello world! Standard output is very useful for debugging.
         // Everything you say here will be directly viewable in your terminal when you run a match!
-        System.out.println("I'm alive");
+        //System.out.println("I'm alive");
 
         // You can also use indicators to save debug notes in replays.
-        rc.setIndicatorString("Hello world!");
+        //rc.setIndicatorString("Hello world!");
 
         while (true) {
             // This code runs during the entire lifespan of the robot, which is why it is in an infinite
@@ -126,6 +119,13 @@ public class RobotPlayer {
      * This code is wrapped inside the infinite loop in run(), so it is called once per turn.
      */
     public static void runTower(RobotController rc) throws GameActionException{
+        RobotInfo[] rf = rc.senseNearbyRobots(GameConstants.PAINT_TRANSFER_RADIUS_SQUARED, rc.getTeam().opponent());
+        for(int i = rf.length; --i>=0;){
+          if(rc.canAttack(rf[i].getLocation())){
+                rc.attack(rf[i].getLocation());
+            }
+        }
+
         // Pick a direction to build in.
         int robotType;
         Direction dir = directions[rng.nextInt(directions.length)];
@@ -161,34 +161,51 @@ public class RobotPlayer {
      * This code is wrapped inside the infinite loop in run(), so it is called once per turn.
      */
     public static void runSoldier(RobotController rc) throws GameActionException{
-        MapInfo[] mapInfo = rc.senseNearbyMapInfos(2);
-        for(int i = 0; i < mapInfo.length; i++){
-            rc.setIndicatorDot(mapInfo[i].getMapLocation(), 100, 150, 250);
+        MapLocation[] mapLocations = rc.getAllLocationsWithinRadiusSquared(rc.getLocation(),4);
+
+        if(rc.canSenseLocation(new MapLocation(28, 31))){
+            targetloc = new MapLocation(28, 31);
+            targetSet = true;
         }
+        MapInfo tL;
+        boolean lowPaint = rc.getPaint() < 110;
         startLoc = rc.getLocation();
-        targetloc = mapInfo[rng.nextInt(mapInfo.length)].getMapLocation();
-        MapLocation atk = startLoc.add(directions[rng.nextInt(directions.length)]);
-        if(rc.canAttack(atk)){
-            rc.attack(atk);
+        if(rc.getID() == 11577 && rc.getTeam() == Team.A){
+            System.out.println(sDl.printlst());
         }
-        for(int i = 0; i < 8; i++){
-            Direction init = Direction.NORTH;
-            if(rc.onTheMap(rc.getLocation().add(init))){
-                MapInfo rP = rc.senseMapInfo(rc.getLocation().add(init));
-                if(rP.getPaint().isAlly()){
-                    targetloc = rP.getMapLocation();
-                    break;
-                }
-            }
-            init = init.rotateRight();
+
+        // if(lowPaint){
+        //     targetloc = sDl.refill(rc);
+        //     targetSet = true;
+        // }
+
+       if(targetloc == null || !targetSet){
+            targetloc = mapLocations[rng.nextInt(mapLocations.length)];
+            targetSet = true;
+       }
+        tL = rc.senseMapInfo(targetloc);
+        PaintType pT = tL.getPaint();
+        Direction nS = BugNavPathFind.move(rc, targetloc, startLoc);
+        if(nS != null && rc.getPaint() > 120 && rc.canAttack(rc.getLocation().add(nS)) && (pT == PaintType.EMPTY || pT.isEnemy())){
+            rc.attack(rc.getLocation().add(nS));
         }
+
+        //Running Low on Paint:
         
-        BugNavPathFind bF = new BugNavPathFind(targetloc, startLoc);
-        if(bF.move(rc) == null){
+        if(nS == null){
             targetSet = false;
+            if(rc.canTransferPaint(targetloc, -30)){
+                rc.transferPaint(targetloc, -30);
+            }
         }
         else{
-            rc.move(bF.move(rc));
+             rc.move(nS);
+             if(!lowPaint){
+                // if(rc.getID() == 11577 && rc.getTeam() == Team.A){
+                //     System.out.println("Added:"+ rc.getRoundNum() + ": " + targetloc);
+                // }
+                sDl.addPosition(targetloc);
+             }
         }
         
         // Sense information about all visible nearby tiles.
@@ -280,12 +297,12 @@ public class RobotPlayer {
             targetSet = true;
         }
         rc.setIndicatorLine(startLoc, targetloc, 255, 100, 155);
-        BugNavPathFind bF = new BugNavPathFind(targetloc, startLoc);
-        if(bF.move(rc) == null){
+        Direction nS = BugNavPathFind.move(rc, targetloc, startLoc);
+        if(nS == null){
             targetSet = false;
         }
         else{
-            rc.move(bF.move(rc));
+            rc.move(nS);
         }
         // System.out.println(mapInfos.length);//69 tiles worth of info, 100 bytecodes MapInfo --> wall, paint(color), location, marker(Secondary, Primary or Enemy) of each tile
         // MapLocation startOfGrid = null;
