@@ -18,10 +18,12 @@ public class RobotPlayer {
      * You can use static variables like this to save any information you want. Keep in mind that even though
      * these variables are static, in Battlecode they aren't actually shared between your robots.
      */
+    static MapLocation[] debugLoc = {new MapLocation(9, 16), new MapLocation(2, 2)};
     static int turnCount = 0;
     static int transition = 0;
+    static int spawnCount = 0;
     static Soldier sDl = new Soldier();
-    static MapLocation[] targetList = {new MapLocation(19, 16), new MapLocation(19,19)};
+    static MapLocation[] targetList = {new MapLocation(27, 33), new MapLocation(28,31)};
     static MapLocation[] pTwLocs = new MapLocation[25];
     int pTwAmount = 0;
 
@@ -47,11 +49,12 @@ public class RobotPlayer {
         Direction.NORTHWEST,
     };
 
-    static boolean debug = false;
+    static boolean debug = true;
 
 
     static boolean targetSet = false;
-    static MapLocation targetloc, startLoc;
+    static MapLocation targetloc = null;
+    static MapLocation startLoc;
     /**
      * run() is the method that is called when a robot is instantiated in the Battlecode world.
      * It is like the main function for your robot. If this method returns, the robot dies!
@@ -132,8 +135,9 @@ public class RobotPlayer {
         MapLocation nextLoc = rc.getLocation().add(dir);
         // Pick a random robot type to build.
         robotType = 0;
-        if (robotType == 0 && rc.canBuildRobot(UnitType.SOLDIER, nextLoc)){
+        if (robotType == 0 && rc.canBuildRobot(UnitType.SOLDIER, nextLoc) && spawnCount < 1){
             rc.buildRobot(UnitType.SOLDIER, nextLoc);
+            spawnCount++;
             System.out.println("BUILT A SOLDIER");
         }
         else if (robotType == 1 && rc.canBuildRobot(UnitType.MOPPER, nextLoc)){
@@ -161,53 +165,80 @@ public class RobotPlayer {
      * This code is wrapped inside the infinite loop in run(), so it is called once per turn.
      */
     public static void runSoldier(RobotController rc) throws GameActionException{
-        MapLocation[] mapLocations = rc.getAllLocationsWithinRadiusSquared(rc.getLocation(),4);
-
-        if(rc.canSenseLocation(new MapLocation(28, 31))){
-            targetloc = new MapLocation(28, 31);
-            targetSet = true;
-        }
-        MapInfo tL;
-        boolean lowPaint = rc.getPaint() < 110;
-        startLoc = rc.getLocation();
-        if(rc.getID() == 11577 && rc.getTeam() == Team.A){
-            System.out.println(sDl.printlst());
-        }
-
-        // if(lowPaint){
-        //     targetloc = sDl.refill(rc);
+        Soldier.runSoldier(rc);
+        // MapLocation[] mapLocations = rc.getAllLocationsWithinRadiusSquared(rc.getLocation(), -1);
+        // if(!targetSet){
+        //     targetloc = mapLocations[rng.nextInt(mapLocations.length)];
         //     targetSet = true;
         // }
+        // Direction nS = BugNavPathFind.move(rc, targetloc, rc.getLocation());
+        // if(nS != null && rc.canMove(nS)){
+        //     rc.move(nS);
+        //     rc.setIndicatorDot(targetloc, 100, 200, 100);
+        // }
+        // else{
+        //     targetSet = false;
+        // }
+        //TESTING ZONE IS UNDER HERE
+    //     MapLocation[] mapLocations = rc.getAllLocationsWithinRadiusSquared(rc.getLocation(),4);
+    //     startLoc = rc.getLocation();
+    //     // if(rc.canSenseLocation(debugLoc) && rc.getID() == 10438){
+    //     //     targetloc = debugLoc;
+    //     //     targetSet = true;
+    //     // }
+    //     // else{
+    //     //     if(rc.getID() == 10438){
+    //     //         targetloc = debugLoc;
+    //     //         targetSet = true;
+    //     //     }
+    //     // }
+    //     MapInfo tL;
+    //     boolean lowPaint = rc.getPaint() < 110;
+    //     if(rc.getID() == 11577 && rc.getTeam() == Team.A){
+    //         System.out.println(sDl.printlst());
+    //     }
 
-       if(targetloc == null || !targetSet){
-            targetloc = mapLocations[rng.nextInt(mapLocations.length)];
-            targetSet = true;
-       }
-        tL = rc.senseMapInfo(targetloc);
-        PaintType pT = tL.getPaint();
-        Direction nS = BugNavPathFind.move(rc, targetloc, startLoc);
-        if(nS != null && rc.getPaint() > 120 && rc.canAttack(rc.getLocation().add(nS)) && (pT == PaintType.EMPTY || pT.isEnemy())){
-            rc.attack(rc.getLocation().add(nS));
-        }
+    //     if(targetloc == null && rc.getID() == 11487 && targetloc != debugLoc[1]){
+    //         targetloc = debugLoc[1];
+    //     }
 
-        //Running Low on Paint:
+    //     // if(lowPaint){
+    //     //     targetloc = sDl.refill(rc);
+    //     //     targetSet = true;
+    //     // }
+
+    // //    if(targetloc == null || !targetSet){
+    // //         targetloc = mapLocations[rng.nextInt(mapLocations.length)];
+    // //         targetSet = true;
+    // //    }
         
-        if(nS == null){
-            targetSet = false;
-            if(rc.canTransferPaint(targetloc, -30)){
-                rc.transferPaint(targetloc, -30);
-            }
-        }
-        else{
-             rc.move(nS);
-             if(!lowPaint){
-                // if(rc.getID() == 11577 && rc.getTeam() == Team.A){
-                //     System.out.println("Added:"+ rc.getRoundNum() + ": " + targetloc);
-                // }
-                sDl.addPosition(targetloc);
-             }
-        }
         
+    //     Direction nS = BugNavPathFind.move(rc, targetloc, startLoc);
+    //     //PaintType pT = rc.senseMapInfo(rc.getLocation().add(nS)).getPaint();
+    //     // if(nS != null && rc.getPaint() > 120 && rc.canAttack(rc.getLocation().add(nS)) && (pT == PaintType.EMPTY || pT.isEnemy()) && !debug){
+    //     //     rc.attack(rc.getLocation().add(nS));
+    //     // }
+
+    // //     //Running Low on Paint:
+        
+    //     if(nS == null){
+    //         targetloc = null;
+    //         if(rc.canTransferPaint(targetloc, -30)){
+    //             rc.transferPaint(targetloc, -30);
+    //         }
+    //     }
+    //     else{
+    //         if(rc.canMove(nS)){
+    //             rc.move(nS);
+    //         }
+    //          if(!lowPaint){
+    //             // if(rc.getID() == 11577 && rc.getTeam() == Team.A){
+    //             //     System.out.println("Added:"+ rc.getRoundNum() + ": " + targetloc);
+    //             // }
+    //             sDl.addPosition(targetloc);
+    //          }
+    //     }
+    //=====================================================================================================    
         // Sense information about all visible nearby tiles.
         // MapInfo[] nearbyTiles = rc.senseNearbyMapInfos();
         // // Search for a nearby ruin to complete.
@@ -491,7 +522,7 @@ public class RobotPlayer {
     public static void updateEnemyRobots(RobotController rc) throws GameActionException{
         // Sensing methods can be passed in a radius of -1 to automatically 
         // use the largest possible value.
-        RobotInfo[] enemyRobots = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
+        RobotInfo[] enemyRobots = rc.senseNearbyRobots(-1, rc.getTeam().opponent());  
         if (enemyRobots.length != 0){
             rc.setIndicatorString("There are nearby enemy robots! Scary!");
             // Save an array of locations with enemy robots in them for possible future use.
